@@ -2,7 +2,7 @@
 
 ## Ссылки
 - **Бот:** [@your_bot](https://t.me/your_bot)
-- **Презентация:** [https://docs.google.com/presentation/d/1z1GY_rd1_I1QrelgSV2b_9cpJn34sBMWEihJ5PA0mL8/edit?usp=sharing](#)
+- **Презентация:** [https://docs.google.com/presentation/d/1z1GY_rd1_I1QrelgSV2b_9cpJn34sBMWEihJ5PA0mL8/edit?usp=sharing](https://docs.google.com/presentation/d/1z1GY_rd1_I1QrelgSV2b_9cpJn34sBMWEihJ5PA0mL8/edit?usp=sharing)
 
 ---
 
