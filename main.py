@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import random
 import time
 
@@ -9,6 +10,7 @@ from aiogram.types import (
     Message,
     ReplyKeyboardMarkup,
     KeyboardButton,
+    FSInputFile,
 )
 
 import config
@@ -91,13 +93,22 @@ async def claim_card(message: Message):
     await base.add_card_to_user(user_id, chosen["id"], chosen["points"])
 
     emoji = RARITY_EMOJI.get(chosen["rarity"], "⚫")
-    await message.answer(
+    caption = (
         f"🎉 Ты получил карту!\n\n"
         f"{emoji} {chosen['name']}\n"
         f"Редкость: {chosen['rarity']}\n"
-        f"Очки: +{chosen['points']}",
-        reply_markup=main_kb,
+        f"Очки: +{chosen['points']}"
     )
+
+    image_path = os.path.join("images", chosen.get("image_file", ""))
+    if chosen.get("image_file") and os.path.exists(image_path):
+        await message.answer_photo(
+            photo=FSInputFile(image_path),
+            caption=caption,
+            reply_markup=main_kb,
+        )
+    else:
+        await message.answer(caption, reply_markup=main_kb)
 
 
 # ── 📦 Мои карты ──────────────────────────────────────────────────────────────
@@ -143,6 +154,9 @@ async def main():
     logging.info("БД инициализирована, бот запускается...")
     await dp.start_polling(bot)
 
+
+if __name__ == "__main__":
+    asyncio.run(main())
 
 if __name__ == "__main__":
     asyncio.run(main())
