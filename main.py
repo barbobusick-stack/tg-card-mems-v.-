@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import random
-import time
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart
@@ -18,8 +17,8 @@ import base
 
 logging.basicConfig(level=logging.INFO)
 
-from aiogram.client.session.aiohttp import AiohttpSession#для хостинга
-session = AiohttpSession(proxy='http://proxy.server:3128') # в proxy указан прокси сервер pythonanywhere, он нужен для подключения
+from aiogram.client.session.aiohttp import AiohttpSession #для хостинга
+session = AiohttpSession(proxy='http://proxy.server:3128')  # раскомментировать на pythonanywhere
 bot = Bot(token=config.TOKEN, session=session)
 dp = Dispatcher()
 
@@ -39,6 +38,19 @@ RARITY_EMOJI = {
     "Epic":      "🟣",
     "Legendary": "🟡",
 }
+
+
+def format_cooldown(seconds: int) -> str:
+    hours, rem = divmod(seconds, 3600)
+    minutes, secs = divmod(rem, 60)
+    parts = []
+    if hours:
+        parts.append(f"{hours} ч.")
+    if minutes:
+        parts.append(f"{minutes} мин.")
+    if secs or not parts:
+        parts.append(f"{secs} сек.")
+    return " ".join(parts)
 
 
 # ── /start ────────────────────────────────────────────────────────────────────
@@ -71,15 +83,11 @@ async def claim_card(message: Message):
             message.from_user.last_name or "",
         )
 
-    user = await base.get_user(user_id)
-    now = int(time.time())
-    elapsed = now - (user["last_claim_time"] or 0)
-    remaining = config.COOLDOWN_SECONDS - elapsed
-
+    remaining = await base.get_claim_cooldown_remaining(user_id)
     if remaining > 0:
-        minutes = remaining // 60
-        seconds = remaining % 60
-        await message.answer(f"⏳ Подожди ещё {minutes} мин. {seconds} сек.")
+        await message.answer(
+            f"⏳ Следующую карту можно получить через {format_cooldown(remaining)}."
+        )
         return
 
     cards = await base.get_all_cards()
@@ -90,7 +98,12 @@ async def claim_card(message: Message):
     weights = [c["weight"] for c in cards]
     chosen = random.choices(cards, weights=weights, k=1)[0]
 
-    await base.add_card_to_user(user_id, chosen["id"], chosen["points"])
+    ok, remaining = await base.add_card_to_user(user_id, chosen["id"], chosen["points"])
+    if not ok:
+        await message.answer(
+            f"⏳ Следующую карту можно получить через {format_cooldown(remaining)}."
+        )
+        return
 
     emoji = RARITY_EMOJI.get(chosen["rarity"], "⚫")
     caption = (
@@ -154,9 +167,6 @@ async def main():
     logging.info("БД инициализирована, бот запускается...")
     await dp.start_polling(bot)
 
-
-if __name__ == "__main__":
-    asyncio.run(main())
 
 if __name__ == "__main__":
     asyncio.run(main())
